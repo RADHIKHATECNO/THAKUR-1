@@ -3,7 +3,7 @@ name: Advanced Cinematic AI Pipeline
 on:
   schedule:
     - cron: '30 23 * * *'  # Roz Subah 5:00 Baje (IST) chalega
-    - cron: '30 14 * * *'  # Roz Shaam 8:00 Baje (IST) chalega
+    - cron: '30 11 * * *'  # Roz Shaam 8:00 Baje (IST) chalega
   workflow_dispatch:       # Aap jab chaho manual button dabakar bhi chala sakte ho
 
 permissions:

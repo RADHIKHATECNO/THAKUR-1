@@ -71,7 +71,7 @@ def upload_video():
             "tags": tags
         },
         "status": {
-            "privacyStatus": "public", 
+            "privacyStatus": "private", 
             "selfDeclaredMadeForKids": False
         }
     }

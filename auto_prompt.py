@@ -113,43 +113,92 @@ def generate_ai_script(duration_sec, topic):
     return None
 
 def generate_ai_metadata(topic):
-    system_prompt = "You are a highly creative Music Director and YouTube SEO Expert."
-    user_prompt = f"""Story Topic: '{topic}'.
-    Create Advertiser-Friendly YouTube Shorts metadata and a Custom Music Prompt.
-    Format EXACTLY like this:
-    TITLE: [Title]
-    DESC: [Description]
-    TAGS: [tag1, tag2, tag3]
-    MUSIC: [Unique 5-8 word music prompt]"""
-    
+    system_prompt = """You are a Top-Tier YouTube Shorts Growth Hacker & Viral Content Strategist.
+You have personally analyzed THOUSANDS of the highest-viewed viral YouTube Shorts (10M+ views) 
+across every niche - emotional stories, animal stories, moral stories, drama, motivation etc.
+You know EXACTLY the proven psychological patterns, hook-words, curiosity-gaps, emoji placement, 
+and hashtag strategy that makes the YouTube Algorithm push a video into the Shorts Suggestion Feed.
+You NEVER write generic/boring metadata. You always replicate PROVEN VIRAL PATTERNS."""
+
+    user_prompt = f"""Our Story Topic: "{topic}"
+
+STEP 1 (Do this mentally): Think like you already studied the TOP 20 most viral YouTube Shorts 
+that are similar in genre/emotion to this story topic. Identify what made THEIR titles, 
+descriptions and tags rank in Suggested/Shorts feed (curiosity hook, emotional trigger words, 
+numbers, power words, relatable phrasing, trending hashtags like #shorts #viral #fyp #trending).
+
+STEP 2: Now create BRAND NEW, HIGHLY VIRAL, SEO-OPTIMIZED metadata for OUR story above, 
+using the SAME proven viral formula you identified — but 100% relevant & matching to OUR topic 
+(do not use unrelated clickbait, keep it honest to the story).
+
+RULES:
+- TITLE: Max 70 characters. MUST include a curiosity hook / emotional trigger / power word 
+  (e.g. "You Won't Believe", "This Broke My Heart", "Wait Till The End", "POV:", "This Is Why...").
+  Add 1-2 relevant emojis. Must feel like a viral Shorts title, NOT generic.
+- DESC: 2-3 lines. FIRST line must hook curiosity (this is what shows before "...more" on Shorts).
+  Include a soft call-to-action (like "Watch till the end 👀" or "Follow for more"). 
+  End with 4-6 relevant hashtags mixing BROAD (#shorts #viral #fyp #trending) 
+  AND NICHE-SPECIFIC hashtags related to the story topic.
+- TAGS: Give 12-15 comma separated tags. Mix of:
+   a) Broad viral tags (shorts, viral shorts, trending shorts, viral video, fyp)
+   b) Niche/genre tags matching the story (e.g. emotional story, animal story, moral story, sad story, motivational shorts - pick whichever fits)
+   c) Topic-specific keyword tags directly related to "{topic}"
+- MUSIC: One unique 5-8 word background music mood description matching story's emotion.
+
+OUTPUT FORMAT EXACTLY (no extra text, no explanation):
+TITLE: [title]
+DESC: [description with hashtags]
+TAGS: [tag1, tag2, tag3, ...]
+MUSIC: [music mood prompt]"""
+
     models = get_live_free_models()
-    music_prompt = "dark emotional cinematic background score" 
-    
-    # Metadata ke liye bhi loop taaki error na aaye
-    for model_name in models[:3]: # First 3 models ko try karega
+    music_prompt = "dark emotional cinematic background score"
+
+    for model_name in models[:3]:
         try:
-            print(f"🎵 Generating Metadata using {model_name}...")
+            print(f"🎵 Generating VIRAL Metadata using {model_name}...")
             response = client.chat.completions.create(
                 model=model_name,
                 messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                temperature=0.8
+                temperature=0.9
             )
             text = response.choices[0].message.content
-            
-            title = re.search(r"TITLE:\s*(.*)", text).group(1).strip()
-            desc = re.search(r"DESC:\s*([\s\S]*?)TAGS:", text).group(1).strip()
-            tags = re.search(r"TAGS:\s*(.*)", text).group(1).strip()
-            music_prompt = re.search(r"MUSIC:\s*(.*)", text).group(1).strip()
-            
-            with open("music_prompt.txt", "w", encoding="utf-8") as f: f.write(music_prompt)
-            print("✅ Metadata successfully generated!")
+
+            title_match = re.search(r"TITLE:\s*(.*)", text)
+            desc_match = re.search(r"DESC:\s*([\s\S]*?)(?:TAGS:|$)", text)
+            tags_match = re.search(r"TAGS:\s*([\s\S]*?)(?:MUSIC:|$)", text)
+            music_match = re.search(r"MUSIC:\s*(.*)", text)
+
+            if not (title_match and desc_match and tags_match):
+                print(f"⚠️ {model_name} ne format sahi nahi diya, next model try karte hain...")
+                continue
+
+            title = title_match.group(1).strip()
+            desc = desc_match.group(1).strip()
+            tags = tags_match.group(1).strip()
+            if music_match:
+                music_prompt = music_match.group(1).strip()
+
+            with open("music_prompt.txt", "w", encoding="utf-8") as f:
+                f.write(music_prompt)
+
+            print("✅ Viral Metadata successfully generated!")
+            print(f"📌 TITLE: {title}")
+            print(f"📌 DESC: {desc}")
+            print(f"📌 TAGS: {tags}")
             return title, desc, tags
-        except:
+        except Exception as e:
+            print(f"⚠️ Model {model_name} failed: {e}")
             time.sleep(1)
-            
-    # Agar kisi bhi API se metadata na bane toh yeh default de dega (Fail nahi hoga)
-    with open("music_prompt.txt", "w", encoding="utf-8") as f: f.write(music_prompt)
-    return "Amazing Viral Story 🔥", "Watch this amazing story till the end!", "shorts, trending, story, viral"
+
+    # Agar sab fail ho jaye to bhi ek decent fallback viral-style metadata do (generic nahi)
+    with open("music_prompt.txt", "w", encoding="utf-8") as f:
+        f.write(music_prompt)
+    fallback_title = f"You Won't Believe What Happens Next 😱 | {topic[:40]}"
+    fallback_desc = (f"This story about {topic} will hit you right in the feels 💔 Watch till the end!\n"
+                      f"#shorts #viral #fyp #trending #story #emotional")
+    fallback_tags = f"shorts, viral shorts, trending shorts, fyp, emotional story, viral video, {topic.lower()}"
+    return fallback_title, fallback_desc, fallback_tags
 
 def process_stories():
     if not os.path.exists(STORY_FILE):
